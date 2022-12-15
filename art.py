@@ -19,6 +19,7 @@ p3 = (n_slats*(increment)+p1[0]-increment, 2*height/3)
 
 def triang(arr, angle):
     return np.tan(np.deg2rad(angle))*arr
+    
 def get_section_1():
     # section 1
     slat_x_a = np.arange(p1[0], n_slats*(increment)+p1[0], increment)
@@ -112,17 +113,46 @@ def get_section_2():
     delta_y = delta_x * slope
     dummy_slat_y_c += delta_y
 
-    idx_to_keep = np.where( (dummy_slat_y_d < p3[1]+triang(dummy_slat_x_a, angle)+1) & 
-                            (dummy_slat_y_c < p3[1]+triang(dummy_slat_x_a, angle)+1))[0]
-    # idx_to_keep = np.where(dummy_slat_y_d>0)[0]
+    # idx_to_keep = np.where( (dummy_slat_y_d < p3[1]+triang(dummy_slat_x_a, angle)+1) & 
+    #                         (dummy_slat_y_c < p3[1]+triang(dummy_slat_x_a, angle)+1))[0]
+    
+    # extend the last vertical to the height
+    start = 8
+    xs = [dummy_slat_x_d[start], dummy_slat_x_c[12]]
+    ys = [dummy_slat_y_d[start], dummy_slat_y_d[12]]
+    a1 = np.array([xs[0], ys[0]])
+    a2 = np.array([xs[1], ys[1]])
+    for i in range(start,len(dummy_slat_y_d)):
+        b1 = np.array([dummy_slat_x_c[i], dummy_slat_y_c[i]])
+        b2 = np.array([dummy_slat_x_d[i], dummy_slat_y_d[i]])
+        intersect = seg_intersect(a1, a2, b1, b2)
+        dummy_slat_x_d[i], dummy_slat_y_d[i] = intersect[0], intersect[1]
+    idx_to_keep = np.where((dummy_slat_x_c < 2*n_slats*(increment)+p1[0]-increment) & 
+                            (dummy_slat_x_d < 2*n_slats*(increment)+p1[0]-increment))[0]
     dummy_slat_x_c = dummy_slat_x_c[idx_to_keep]
     dummy_slat_x_d = dummy_slat_x_d[idx_to_keep]
     dummy_slat_y_c = dummy_slat_y_c[idx_to_keep]
     dummy_slat_y_d = dummy_slat_y_d[idx_to_keep]
-    # extend the last vertical to the height
+    print(2*n_slats*(increment)+p1[0])
+    print(dummy_slat_x_d)
+    return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d, xs, ys
+def perp( a ) :
+    b = np.empty_like(a)
+    b[0] = -a[1]
+    b[1] = a[0]
+    return b
 
-    return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d
-
+# line segment a given by endpoints a1, a2
+# line segment b given by endpoints b1, b2
+# return 
+def seg_intersect(a1,a2, b1,b2) :
+    da = a2-a1
+    db = b2-b1
+    dp = a1-b1
+    dap = perp(da)
+    denom = np.dot( dap, db)
+    num = np.dot( dap, dp )
+    return (num / denom.astype(float))*db + b1
 def main():
     plt.figure(figsize=(10,20))
 
@@ -134,7 +164,7 @@ def main():
     for i in range(len(slat_x_c)):
         plt.plot([slat_x_c[i], slat_x_d[i]], [slat_y_c[i], slat_y_d[i]],c='r')
 
-    slat_x_a, slat_x_b,slat_x_c, slat_x_d, slat_y_a, slat_y_b, slat_y_c, slat_y_d = get_section_2()
+    slat_x_a, slat_x_b,slat_x_c, slat_x_d, slat_y_a, slat_y_b, slat_y_c, slat_y_d, xs, ys = get_section_2()
     for i in range(len(slat_x_a)):
         plt.plot([slat_x_a[i], slat_x_b[i]], [slat_y_a[i], slat_y_b[i]],c='orange')
     for i in range(len(slat_x_c)):
