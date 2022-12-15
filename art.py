@@ -36,7 +36,7 @@ def get_section_1():
     # delta_x is known based on the clipping we performed
     # calculate delta_y
     dummy_slat_x_c = dummy_slat_x_b
-    dummy_slat_x_c = np.clip(dummy_slat_x_b, 0, slat_x_a[-1])
+    dummy_slat_x_c = np.clip(dummy_slat_x_b, 0, slat_x_a[-1]-slat_width/2)
     delta_x = dummy_slat_x_b - dummy_slat_x_c
     delta_y = delta_x * slope + 0 # this zero is the canvas' leftmost coordinate
     dummy_slat_y_c = dummy_slat_y_b + delta_y
@@ -58,12 +58,9 @@ def get_section_1():
     dummy_slat_x_d = dummy_slat_x_d[idx_to_keep]
     dummy_slat_y_c = dummy_slat_y_c[idx_to_keep]
     dummy_slat_y_d = dummy_slat_y_d[idx_to_keep]
+    # extend the last vertical to the height
 
-    # plt.figure()
-    # for i in range(len(dummy_slat_x_c)):
-    #     plt.plot([dummy_slat_x_c[i], dummy_slat_x_d[i]], [dummy_slat_y_c[i], dummy_slat_y_d[i]],c='k')
-    # plt.gca().set_aspect("equal")
-    # plt.savefig('test1.png')
+    slat_y_b[-1]=height
 
 
     return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d
