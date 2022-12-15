@@ -10,17 +10,17 @@ increment = slat_width+slat_sep
 
 n_slats = 8
 height = 36
-width = 24
-angle = 28
+width = 28
+ANGLE = 28
 # transition point on the left panel
 p1 = (0, 2 * height/3)
 p4 = (n_slats*(increment)+p1[0]-increment, height/3)
-p3 = (n_slats*(increment)+p1[0]-increment, 2*height/3)
+p3 = (2*n_slats*(increment)+p1[0]-increment, 2*height/3)
 
 def triang(arr, angle):
     return np.tan(np.deg2rad(angle))*arr
-    
-def get_section_1():
+
+def get_section_1(angle):
     # section 1
     slat_x_a = np.arange(p1[0], n_slats*(increment)+p1[0], increment)
     slat_x_b = slat_x_a
@@ -72,7 +72,7 @@ def get_section_1():
 
     return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d
 
-def get_section_2():
+def get_section_2(angle):
     # section 1 (bottom)
 
     slat_x_a = np.arange(n_slats*(increment)+p1[0], 2*n_slats*(increment)+p1[0], increment)
@@ -102,11 +102,11 @@ def get_section_2():
     dummy_slat_y_c = dummy_slat_y_b
     dummy_slat_x_c = dummy_slat_x_b
 
-    dummy_slat_x_d = np.ones(len(dummy_slat_x_a))*p3[0]#np.clip(dummy_slat_x_c, p3[0], width)
-    mx = slope*(p3[0]-dummy_slat_x_c)
+    dummy_slat_x_d = np.ones(len(dummy_slat_x_a))*p4[0]#np.clip(dummy_slat_x_c, p3[0], width)
+    mx = slope*(p4[0]-dummy_slat_x_c)
     dummy_slat_y_d = dummy_slat_y_c-mx
 
-    dummy_slat_x_c_ = np.clip(dummy_slat_x_c, 0,slat_x_a[-1])
+    dummy_slat_x_c_ = np.clip(dummy_slat_x_c, 0,slat_x_a[-1]+increment/2)
     
     delta_x = dummy_slat_x_c - dummy_slat_x_c_
     dummy_slat_x_c = dummy_slat_x_c_
@@ -127,15 +127,24 @@ def get_section_2():
         b2 = np.array([dummy_slat_x_d[i], dummy_slat_y_d[i]])
         intersect = seg_intersect(a1, a2, b1, b2)
         dummy_slat_x_d[i], dummy_slat_y_d[i] = intersect[0], intersect[1]
-    idx_to_keep = np.where((dummy_slat_x_c < 2*n_slats*(increment)+p1[0]-increment) & 
-                            (dummy_slat_x_d < 2*n_slats*(increment)+p1[0]-increment))[0]
+    idx_to_keep = np.where((dummy_slat_x_c < 2*n_slats*(increment)+p1[0]) & 
+                            (dummy_slat_x_d < 2*n_slats*(increment)+p1[0]))[0]
     dummy_slat_x_c = dummy_slat_x_c[idx_to_keep]
     dummy_slat_x_d = dummy_slat_x_d[idx_to_keep]
     dummy_slat_y_c = dummy_slat_y_c[idx_to_keep]
     dummy_slat_y_d = dummy_slat_y_d[idx_to_keep]
-    print(2*n_slats*(increment)+p1[0])
-    print(dummy_slat_x_d)
-    return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d, xs, ys
+
+    slat_x_e, slat_x_f = dummy_slat_x_d, dummy_slat_x_d
+    slat_y_e = dummy_slat_y_d
+    slat_y_f = np.ones(len(slat_y_e))*height
+    
+    return slat_x_a, slat_x_b, dummy_slat_x_c, dummy_slat_x_d, slat_x_e, slat_x_f, slat_y_a, slat_y_b, dummy_slat_y_c, dummy_slat_y_d, slat_y_e, slat_y_f, xs, ys
+
+def mirror_coordinates(xs, ys, axis = "y", mirror_value = 0.0):
+    if axis == "y":
+        return -(xs - mirror_value)+mirror_value , ys 
+        
+
 def perp( a ) :
     b = np.empty_like(a)
     b[0] = -a[1]
@@ -157,24 +166,39 @@ def main():
     plt.figure(figsize=(10,20))
 
     # calculate lefthand side
-    slat_x_a, slat_x_b,slat_x_c, slat_x_d, slat_y_a, slat_y_b, slat_y_c, slat_y_d = get_section_1()
+    slat_x_a, slat_x_b,slat_x_c, slat_x_d, slat_y_a, slat_y_b, slat_y_c, slat_y_d = get_section_1(ANGLE)
     # plot lefthand side
     for i in range(len(slat_x_a)):
-        plt.plot([slat_x_a[i], slat_x_b[i]], [slat_y_a[i], slat_y_b[i]],c='k')
+        plt.plot([slat_x_a[i], slat_x_b[i]], [slat_y_a[i], slat_y_b[i]],c='k',zorder=5)
     for i in range(len(slat_x_c)):
         plt.plot([slat_x_c[i], slat_x_d[i]], [slat_y_c[i], slat_y_d[i]],c='r')
 
-    slat_x_a, slat_x_b,slat_x_c, slat_x_d, slat_y_a, slat_y_b, slat_y_c, slat_y_d, xs, ys = get_section_2()
+    slat_x_a, slat_x_b,slat_x_c, slat_x_d,slat_x_e,slat_x_f, slat_y_a, slat_y_b, slat_y_c, slat_y_d, slat_y_e, slat_y_f, xs, ys = get_section_2(ANGLE)
     for i in range(len(slat_x_a)):
         plt.plot([slat_x_a[i], slat_x_b[i]], [slat_y_a[i], slat_y_b[i]],c='orange')
     for i in range(len(slat_x_c)):
         plt.plot([slat_x_c[i], slat_x_d[i]], [slat_y_c[i], slat_y_d[i]],c='g')
+    for i in range(len(slat_x_e)):
+        plt.plot([slat_x_e[i], slat_x_f[i]], [slat_y_e[i], slat_y_f[i]],c='orange')
+
+    slat_x_a,slat_y_a = mirror_coordinates(slat_x_a, slat_y_a, "y", p3[0]+increment/2)
+    slat_x_b,slat_y_b = mirror_coordinates(slat_x_b, slat_y_b, "y", p3[0]+increment/2)
+    slat_x_c,slat_y_c = mirror_coordinates(slat_x_c, slat_y_c, "y", p3[0]+increment/2)
+    slat_x_d,slat_y_d = mirror_coordinates(slat_x_d, slat_y_d, "y", p3[0]+increment/2)
+    slat_x_e,slat_y_e = mirror_coordinates(slat_x_e, slat_y_e, "y", p3[0]+increment/2)
+    slat_x_f,slat_y_f = mirror_coordinates(slat_x_f, slat_y_f, "y", p3[0]+increment/2)
+    print(p3[0])
+    for i in range(len(slat_x_a)):
+        plt.plot([slat_x_a[i], slat_x_b[i]], [slat_y_a[i], slat_y_b[i]],c='k')
+    for i in range(len(slat_x_c)):
+        plt.plot([slat_x_c[i], slat_x_d[i]], [slat_y_c[i], slat_y_d[i]],c='r')
+    for i in range(len(slat_x_e)):
+        plt.plot([slat_x_e[i], slat_x_f[i]], [slat_y_e[i], slat_y_f[i]],c='magenta')
     plt.ylim([0, height])
     plt.xlim([0, width])
     ax = plt.gca()
     ax.set_aspect("equal")
-    # ax.axis('off')
-    # plt.gca().add_patch(rect)
+    ax.axis('off')
     plt.savefig("test.png")
 if __name__=="__main__":
     main()
